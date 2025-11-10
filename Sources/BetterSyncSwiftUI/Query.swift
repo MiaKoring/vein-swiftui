@@ -14,14 +14,10 @@ public struct Query<M: PersistentModel>: DynamicProperty {
         if let results = queryObserver.results {
             return results.sorted(by: { $0.id! < $1.id! })
         }
-        do {
-            if queryObserver.results == nil && queryObserver.primaryObserver == nil {
-                queryObserver.initialize(with: context)
-            }
-            return (queryObserver.primaryObserver?.results ?? queryObserver.results ?? []).sorted(by: { $0.id! < $1.id! })
-        } catch {
-            fatalError(error.localizedDescription)
+        if queryObserver.results == nil && queryObserver.primaryObserver == nil {
+            queryObserver.initialize(with: context)
         }
+        return (queryObserver.primaryObserver?.results ?? queryObserver.results ?? []).sorted(by: { $0.id! < $1.id! })
     }
     
     public init(_ predicate: M._PredicateHelper = M._PredicateHelper()) {
@@ -167,7 +163,7 @@ public struct BetterSyncContainer<Content: View>: View {
     }
     
     public var body: some View {
-        if let container, isInitialized {
+        if let _ = container, isInitialized {
             content()
         } else if let container = container {
             ProgressView()
