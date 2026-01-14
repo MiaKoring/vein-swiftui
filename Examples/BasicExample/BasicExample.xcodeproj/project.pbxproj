@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A63511CC2F102C2D00251CF6 /* VeinSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = A63511CB2F102C2D00251CF6 /* VeinSwiftUI */; };
 		A63778FD2F0C281400C47666 /* VeinSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = A63778FC2F0C281400C47666 /* VeinSwiftUI */; };
 /* End PBXBuildFile section */
 
@@ -27,6 +28,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A63511CC2F102C2D00251CF6 /* VeinSwiftUI in Frameworks */,
 				A63778FD2F0C281400C47666 /* VeinSwiftUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -71,6 +73,7 @@
 			name = BasicExample;
 			packageProductDependencies = (
 				A63778FC2F0C281400C47666 /* VeinSwiftUI */,
+				A63511CB2F102C2D00251CF6 /* VeinSwiftUI */,
 			);
 			productName = BasicExample;
 			productReference = A6A9AD622EBF7B8C00468898 /* BasicExample.app */;
@@ -102,7 +105,7 @@
 			mainGroup = A6A9AD592EBF7B8C00468898;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				A63778FB2F0C281400C47666 /* XCLocalSwiftPackageReference "../../../VeinSwiftUI" */,
+				A63511CA2F102C2D00251CF6 /* XCLocalSwiftPackageReference "../../../vein-swiftui" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A6A9AD632EBF7B8C00468898 /* Products */;
@@ -366,13 +369,17 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		A63778FB2F0C281400C47666 /* XCLocalSwiftPackageReference "../../../VeinSwiftUI" */ = {
+		A63511CA2F102C2D00251CF6 /* XCLocalSwiftPackageReference "../../../vein-swiftui" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../../VeinSwiftUI;
+			relativePath = "../../../vein-swiftui";
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		A63511CB2F102C2D00251CF6 /* VeinSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = VeinSwiftUI;
+		};
 		A63778FC2F0C281400C47666 /* VeinSwiftUI */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = VeinSwiftUI;
