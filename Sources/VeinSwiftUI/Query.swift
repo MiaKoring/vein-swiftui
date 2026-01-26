@@ -12,12 +12,12 @@ public struct Query<M: PersistentModel>: DynamicProperty {
     
     public var wrappedValue: [M] {
         if let results = queryObserver.results {
-            return results.sorted(by: { $0.id! < $1.id! })
+            return results.sorted(by: { $0.id < $1.id })
         }
         if queryObserver.results == nil && queryObserver.primaryObserver == nil {
             queryObserver.initialize(with: context)
         }
-        return (queryObserver.primaryObserver?.results ?? queryObserver.results ?? []).sorted(by: { $0.id! < $1.id! })
+        return (queryObserver.primaryObserver?.results ?? queryObserver.results ?? []).sorted(by: { $0.id < $1.id })
     }
     
     public init(_ predicate: M._PredicateHelper = M._PredicateHelper()) {

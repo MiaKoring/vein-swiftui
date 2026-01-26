@@ -14,8 +14,8 @@ let package = Package(
         ),
     ],
     dependencies: [
-        //.package(url: "https://github.com/amethystsoft/Vein", branch: "main"),
-        .package(name: "Vein", path: "../Vein"),
+        .package(url: "https://github.com/amethystsoft/Vein", branch: "main"),
+        //.package(name: "Vein", path: "../Vein"),
         .package(url: "https://github.com/swiftlang/swift-syntax.git", "600.0.0" ..< "610.0.0"),
     ],
     targets: [
@@ -32,7 +32,6 @@ let package = Package(
         .macro(
             name: "VeinSwiftUIMacros",
             dependencies: [
-                .product(name: "CommonVeinMacroLogic", package: "vein"),
                 .product(name: "SwiftSyntax", package: "swift-syntax"),
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
