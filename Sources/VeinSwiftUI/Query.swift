@@ -12,12 +12,12 @@ public struct Query<M: PersistentModel>: DynamicProperty {
     
     public var wrappedValue: [M] {
         if let results = queryObserver.results {
-            return results.sorted(by: { $0.id! < $1.id! })
+            return results.sorted(by: { $0.id < $1.id })
         }
         if queryObserver.results == nil && queryObserver.primaryObserver == nil {
             queryObserver.initialize(with: context)
         }
-        return (queryObserver.primaryObserver?.results ?? queryObserver.results ?? []).sorted(by: { $0.id! < $1.id! })
+        return (queryObserver.primaryObserver?.results ?? queryObserver.results ?? []).sorted(by: { $0.id < $1.id })
     }
     
     public init(_ predicate: M._PredicateHelper = M._PredicateHelper()) {
@@ -147,15 +147,10 @@ extension EnvironmentValues {
     }
 }
 
-extension VeinContainer {
-    public func modelContainer(_ container: Vein.ModelContainer) -> some View {
-        self.environment(\.modelContainer, container)
-    }
-}
-
 public struct VeinContainer<Content: View>: View {
     @Environment(\.modelContainer) private var container
     @State private var isInitialized: Bool = false
+    @State var error: Error?
     private let content: () -> Content
     
     public init(@ViewBuilder content: @escaping () -> Content ) {
@@ -166,17 +161,40 @@ public struct VeinContainer<Content: View>: View {
         if let _ = container, isInitialized {
             content()
         } else if let container = container {
-            ProgressView()
-                .task {
-                    do {
-                        try await container.migrate()
-                    } catch {
-                        print(error.localizedDescription)
-                    }
-                    isInitialized = true
+            Text("An error occured while migrating database:").font(.title3)
+            if let error = error as? LocalizedError {
+                if let errorDescription = error.errorDescription {
+                    Text(errorDescription).foregroundStyle(.red)
                 }
+                if let failureReason = error.failureReason {
+                    Text(failureReason).foregroundStyle(.secondary)
+                }
+                if let recoverySuggestion = error.recoverySuggestion {
+                    Text(recoverySuggestion).foregroundStyle(.secondary)
+                }
+            } else if let error {
+                Text("An error occured while migrating database:").font(.title3)
+                Text(error.localizedDescription).foregroundStyle(.red)
+            } else {
+                ProgressView()
+                    .onAppear {
+                        do {
+                            try container.migrate()
+                            isInitialized = true
+                        } catch {
+                            self.error = error
+                            print(error.localizedDescription)
+                        }
+                    }
+            }
         } else {
             ProgressView()
         }
+    }
+}
+
+extension VeinContainer {
+    public func modelContainer(_ container: Vein.ModelContainer) -> some View {
+        self.environment(\.modelContainer, container)
     }
 }

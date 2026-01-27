@@ -4,11 +4,25 @@ import SwiftUI
 
 @propertyWrapper
 public final class LazyField<T: Persistable>: PersistedField, @unchecked Sendable {
-   public typealias WrappedType = T?
+    public typealias WrappedType = T?
     
     private let lock = NSLock()
     private var store: WrappedType
-    private var useStore: Bool = false
+    private var readFromStore = false
+    
+    private var _wasTouched: Bool = false
+    public private(set) var wasTouched: Bool {
+        get {
+            lock.withLock {
+                _wasTouched
+            }
+        }
+        set {
+            lock.withLock {
+                _wasTouched = newValue
+            }
+        }
+    }
     
     /// ONLY LET MACRO SET
     public var key: String?
@@ -32,31 +46,41 @@ public final class LazyField<T: Persistable>: PersistedField, @unchecked Sendabl
     
     public var wrappedValue: WrappedType {
         get {
-            return lock.withLock {
-                if useStore {
+            return lock.withLock { () -> WrappedType in
+                if readFromStore {
                     return store
                 }
                 guard let context = model?.context else {
                     return store
                 }
                 do {
-                    let result = try context.fetchSingleProperty(field: self)
+                    let result = try context._fetchSingleProperty(field: self)
                     store = result
-                    useStore = true
+                    readFromStore = true
                     return result
+                } catch let error as ManagedObjectContextError {
+                    readFromStore = false
+                    if case let .noSuchTable = error {
+                        return nil
+                    }
+                    if case .unexpectedlyEmptyResult = error {
+                        return store
+                    }
+                    fatalError(error.localizedDescription)
                 } catch { fatalError(error.localizedDescription) }
             }
         }
         set {
-            if let context = model?.context {
-                context.updateDetached(field: self, newValue: newValue)
-            } else {
-                lock.withLock {
-                    useStore = true
-                    store = newValue
-                    model?.notifyOfChanges()
-                }
-            }
+            guard
+                let model = model,
+                let context = model.context
+            else { return setAndNotify(newValue) }
+            
+            let predicateMatches = context._prepareForChange(of: model)
+            setAndNotify(newValue)
+            context._markTouched(model, previouslyMatching: predicateMatches)
+            
+            wasTouched = true
         }
     }
     
@@ -74,9 +98,23 @@ public final class LazyField<T: Persistable>: PersistedField, @unchecked Sendabl
         self.store = wrappedValue
     }
     
-    public func setValue(to newValue: T?) {
-        self.store = newValue
+    private func setAndNotify(_ newValue: WrappedType) {
+        lock.withLock {
+            store = newValue
+            readFromStore = true
+        }
         model?.notifyOfChanges()
+    }
+    
+    public func setStoreToCapturedState(_ state: Any) {
+        lock.withLock {
+            guard let value = state as? WrappedType else {
+                fatalError(ManagedObjectContextError.capturedStateApplicationFailed(WrappedType.self, instanceKey).localizedDescription)
+            }
+            self.store = value
+            self.readFromStore = false
+            self._wasTouched = false
+        }
     }
 }
 
@@ -87,6 +125,20 @@ public final class Field<T: Persistable>: PersistedField, @unchecked Sendable {
     public var key: String?
     public weak var model: (any PersistentModel)?
     private let lock = NSLock()
+    
+    private var _wasTouched: Bool = false
+    public private(set) var wasTouched: Bool {
+        get {
+            lock.withLock {
+                _wasTouched
+            }
+        }
+        set {
+            lock.withLock {
+                _wasTouched = newValue
+            }
+        }
+    }
     
     package var store: T
     
@@ -112,14 +164,15 @@ public final class Field<T: Persistable>: PersistedField, @unchecked Sendable {
             }
         }
         set {
-            if let context = model?.context {
-                context.updateDetached(field: self, newValue: newValue)
-            } else {
-                lock.withLock {
-                    store = newValue
-                    model?.notifyOfChanges()
-                }
-            }
+            guard
+                let model = model,
+                let context = model.context
+            else { return setAndNotify(newValue) }
+            
+            let predicateMatches = context._prepareForChange(of: model)
+            setAndNotify(newValue)
+            context._markTouched(model, previouslyMatching: predicateMatches)
+            self.wasTouched = true
         }
     }
     
@@ -128,8 +181,20 @@ public final class Field<T: Persistable>: PersistedField, @unchecked Sendable {
         self.key = nil
     }
     
-    public func setValue(to newValue: T) {
-        self.store = newValue
+    private func setAndNotify(_ newValue: WrappedType) {
+        lock.withLock {
+            store = newValue
+        }
         model?.notifyOfChanges()
+    }
+    
+    public func setStoreToCapturedState(_ state: Any) {
+        lock.withLock {
+            guard let value = state as? WrappedType else {
+                fatalError(ManagedObjectContextError.capturedStateApplicationFailed(WrappedType.self, instanceKey).localizedDescription)
+            }
+            self.store = value
+            self._wasTouched = false
+        }
     }
 }
