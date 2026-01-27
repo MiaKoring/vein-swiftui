@@ -21,8 +21,8 @@ struct ContentView: View {
                     for _ in 0...30 {
                         if stop { return }
                         try? context.insert(Test(flag: Int.random(in: 0...1) > 0, testEncryption: "\(Int.random(in: 0...1000))", randomValue: Int.random(in: 0...1000)))
+                        await Task.yield()
                     }
-                    await Task.yield()
                 }
             }
             Button("printQuery") { print(testItems.map { $0.id }) }

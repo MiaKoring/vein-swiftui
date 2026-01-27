@@ -5,11 +5,24 @@ import SwiftUI
 @propertyWrapper
 public final class LazyField<T: Persistable>: PersistedField, @unchecked Sendable {
     public typealias WrappedType = T?
-    public var wasTouched: Bool = false
     
     private let lock = NSLock()
     private var store: WrappedType
     private var readFromStore = false
+    
+    private var _wasTouched: Bool = false
+    public private(set) var wasTouched: Bool {
+        get {
+            lock.withLock {
+                _wasTouched
+            }
+        }
+        set {
+            lock.withLock {
+                _wasTouched = newValue
+            }
+        }
+    }
     
     /// ONLY LET MACRO SET
     public var key: String?
@@ -66,9 +79,7 @@ public final class LazyField<T: Persistable>: PersistedField, @unchecked Sendabl
             setAndNotify(newValue)
             context._markTouched(model, previouslyMatching: predicateMatches)
             
-            lock.withLock {
-                wasTouched = true
-            }
+            wasTouched = true
         }
     }
     
@@ -101,7 +112,7 @@ public final class LazyField<T: Persistable>: PersistedField, @unchecked Sendabl
             }
             self.store = value
             self.readFromStore = false
-            self.wasTouched = false
+            self._wasTouched = false
         }
     }
 }
@@ -113,7 +124,20 @@ public final class Field<T: Persistable>: PersistedField, @unchecked Sendable {
     public var key: String?
     public weak var model: (any PersistentModel)?
     private let lock = NSLock()
-    public var wasTouched: Bool = false
+    
+    private var _wasTouched: Bool = false
+    public private(set) var wasTouched: Bool {
+        get {
+            lock.withLock {
+                _wasTouched
+            }
+        }
+        set {
+            lock.withLock {
+                _wasTouched = newValue
+            }
+        }
+    }
     
     package var store: T
     
@@ -147,9 +171,7 @@ public final class Field<T: Persistable>: PersistedField, @unchecked Sendable {
             let predicateMatches = context._prepareForChange(of: model)
             setAndNotify(newValue)
             context._markTouched(model, previouslyMatching: predicateMatches)
-            lock.withLock {
-                self.wasTouched = true
-            }
+            self.wasTouched = true
         }
     }
     
@@ -171,7 +193,7 @@ public final class Field<T: Persistable>: PersistedField, @unchecked Sendable {
                 fatalError(ManagedObjectContextError.capturedStateApplicationFailed(WrappedType.self, instanceKey).localizedDescription)
             }
             self.store = value
-            self.wasTouched = false
+            self._wasTouched = false
         }
     }
 }
